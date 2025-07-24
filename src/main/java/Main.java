@@ -1,5 +1,6 @@
 import model.Board;
 import model.Space;
+import util.BoardTemplate;
 
 import java.util.ArrayList;
 import java.util.InputMismatchException;
@@ -9,6 +10,8 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static util.BoardTemplate.BOARD_TEMPLATE;
 
 public class Main {
 
@@ -77,6 +80,7 @@ public class Main {
     private static void inputNumber() {
         if(Objects.isNull(board)){
             System.out.println("Jogo ainda não iniciado");
+            return;
         }
 
         System.out.println("Informe a coluna que deseja por o número: ");
@@ -88,12 +92,15 @@ public class Main {
 
         if(!board.changeValue(col,row,value)){
             System.out.printf("A posição [%s ,%s] tem um valor fixo\n",col,row);
+        } else {
+            System.out.printf("O valor %s foi inserido com sucesso em [%s, %s]", value,col,row);
         }
     }
 
     private static void removeNumber() {
         if(Objects.isNull(board)){
             System.out.println("Jogo ainda não iniciado");
+            return;
         }
 
         System.out.println("Informe a coluna que deseja por o número: ");
@@ -108,15 +115,67 @@ public class Main {
 
 
     private static void showCurrentGame() {
+        if(Objects.isNull(board)){
+            System.out.println("Jogo ainda não iniciado");
+            return;
+        }
+
+        var args = new Object[81];
+        var argPos = 0;
+        for (int i = 0; i < BOARD_LIMIT; i++) {
+            for (var col:board.getSpaces()){
+                args[argPos ++] = " " + (Objects.isNull(col.get(i).getActual()) ? " " : col.get(i).getActual());
+            }
+        }
+        System.out.println("O momento atual do seu jogo é");
+        System.out.printf((BOARD_TEMPLATE) + "\n", args);
     }
 
     private static void showGameStatus() {
+        if(Objects.isNull(board)){
+            System.out.println("Jogo ainda não iniciado");
+            return;
+        }
+
+        System.out.printf("O jogo atualmente se encontra no status %s\n", board.getStatus().getLabel());
+        if(board.hasErrors()){
+            System.out.println("O jogo contém erros!");
+        }else {
+            System.out.println("O jogo está perfeito sem erros!");
+        }
     }
 
     private static void clearGame() {
+        if(Objects.isNull(board)){
+            System.out.println("Jogo ainda não iniciado");
+            return;
+        }
+
+        System.out.println("Você quer realmente reiniciar o jogo?");
+        var confirm = scanner.next();
+        while (!confirm.equalsIgnoreCase("sim") && !confirm.equalsIgnoreCase("não") || !confirm.equalsIgnoreCase("nao")){
+            System.out.println("Informe Sim ou Não");
+            confirm =scanner.next();
+        }
+
+        if(confirm.equalsIgnoreCase("sim")) board.reset();
     }
 
     private static void finishGame() {
+        if(Objects.isNull(board)){
+            System.out.println("Jogo ainda não iniciado");
+            return;
+        }
+
+        if (board.gameIsFinished()){
+            System.out.println("Parabéns jogo foi finalizado com sucesso!");
+            showCurrentGame();
+            board=null;
+        } else if (board.hasErrors()) {
+            System.out.println("O jogo contém erros, verifique e tente novamente");
+        } else {
+            System.out.println("Ainda há campos vazios no tabuleiro!");
+        }
     }
 
     private static int runUntilGetValidNumber(final int min, final int max){
@@ -130,7 +189,9 @@ public class Main {
 
         }catch (InputMismatchException ex){
             System.out.printf("O valor informado não condiz com o esperado, Informe um número entre %s e %s\n", min, max);
-            return runUntilGetValidNumber(min,max);
+            scanner.next();
+            var newTry = runUntilGetValidNumber(min,max);
+            return newTry;
         }
     }
 }
